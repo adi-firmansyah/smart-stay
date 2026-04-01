@@ -6,6 +6,7 @@ from reqtrace import ReqTrace, ReqTraceFilter, ReqTraceMiddleware
 
 from src.config import settings
 from src.database import check_db, close_db, init_db
+from src.routers.face_embeddings import router as face_embeddings_router
 from src.routers.residents import router as residents_router
 
 
@@ -47,4 +48,6 @@ def health_check() -> dict[str, str]:
     }
 
 
+# Include routers
 app.include_router(residents_router)
+app.include_router(face_embeddings_router)

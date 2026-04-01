@@ -14,6 +14,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Text,
     Uuid,
     func,
 )
@@ -81,7 +82,7 @@ class FaceEmbedding(Base):
         nullable=False,
         index=True,
     )
-    image_path: Mapped[str] = mapped_column(String(100), nullable=False)
+    image_path: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(
         Vector(settings.deepface_embedding_size), nullable=False
     )

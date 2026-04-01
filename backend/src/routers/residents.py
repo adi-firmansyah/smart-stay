@@ -1,12 +1,14 @@
+from typing import Sequence
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
 
 from src.database import DBSession
 from src.models import Resident
 from src.schemas import CreateResidentRequest, ResidentResponse, UpdateResidentRequest
 
-router = APIRouter(
+router: APIRouter = APIRouter(
     prefix="/residents",
     tags=["Residents"],
 )
@@ -17,32 +19,32 @@ router = APIRouter(
     description="Endpoint untuk mendapatkan daftar semua penghuni.",
     response_model=list[ResidentResponse],
 )
-async def get_residents(db: DBSession, skip: int = 0, limit: int = 10):
-    return db.query(Resident).offset(skip).limit(limit).all()
+async def get_residents(
+    db: DBSession, skip: int = 0, limit: int = 10
+) -> Sequence[Resident]:
+    return db.execute(select(Resident).offset(skip).limit(limit)).scalars().all()
 
 
 @router.post(
     path="/",
-    description="Endpoint untuk menambahkan penghuni baru.",
+    description="Endpoint untuk membuat penghuni baru.",
     response_model=ResidentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_resident(
-    db: DBSession,
-    create_resident_request: CreateResidentRequest,
-):
-    existing_resident = (
-        db.query(Resident)
-        .filter(Resident.rfid_code == create_resident_request.rfid_code)
-        .first()
-    )
-    if existing_resident:
+    db: DBSession, create_resident_request: CreateResidentRequest
+) -> Resident:
+    existing: Resident | None = db.execute(
+        select(Resident).where(Resident.rfid_code == create_resident_request.rfid_code)
+    ).scalar_one_or_none()
+
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kode RFID sudah digunakan oleh penghuni lain",
+            detail="Kode RFID sudah digunakan oleh penghuni lain.",
         )
 
-    new_resident = Resident(**create_resident_request.model_dump())
+    new_resident: Resident = Resident(**create_resident_request.model_dump())
     db.add(new_resident)
     db.commit()
     db.refresh(new_resident)
@@ -54,31 +56,37 @@ async def create_resident(
     description="Endpoint untuk mendapatkan detail penghuni berdasarkan ID.",
     response_model=ResidentResponse,
 )
-async def get_resident(db: DBSession, resident_id: UUID):
-    resident = db.query(Resident).filter(Resident.id == resident_id).first()
+async def get_resident(db: DBSession, resident_id: UUID) -> Resident:
+    resident: Resident | None = db.execute(
+        select(Resident).where(Resident.id == resident_id)
+    ).scalar_one_or_none()
+
     if not resident:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Penghuni tidak ditemukan",
+            detail="Penghuni tidak ditemukan.",
         )
     return resident
 
 
 @router.patch(
     path="/{resident_id}",
-    description="Endpoint untuk memperbarui penghuni berdasarkan ID.",
+    description="Endpoint untuk memperbarui detail penghuni berdasarkan ID.",
     response_model=ResidentResponse,
 )
 async def update_resident(
     db: DBSession,
     resident_id: UUID,
     update_resident_request: UpdateResidentRequest,
-):
-    resident = db.query(Resident).filter(Resident.id == resident_id).first()
+) -> Resident:
+    resident: Resident | None = db.execute(
+        select(Resident).where(Resident.id == resident_id)
+    ).scalar_one_or_none()
+
     if not resident:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Penghuni tidak ditemukan",
+            detail="Penghuni tidak ditemukan.",
         )
 
     for key, value in update_resident_request.model_dump(exclude_unset=True).items():
@@ -94,12 +102,15 @@ async def update_resident(
     description="Endpoint untuk menghapus penghuni berdasarkan ID.",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_resident(db: DBSession, resident_id: UUID):
-    resident = db.query(Resident).filter(Resident.id == resident_id).first()
+async def delete_resident(db: DBSession, resident_id: UUID) -> None:
+    resident: Resident | None = db.execute(
+        select(Resident).where(Resident.id == resident_id)
+    ).scalar_one_or_none()
+
     if not resident:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Penghuni tidak ditemukan",
+            detail="Penghuni tidak ditemukan.",
         )
 
     db.delete(resident)

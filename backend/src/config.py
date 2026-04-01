@@ -29,22 +29,19 @@ class Settings(BaseSettings):
     deepface_detector: str = "opencv"
     deepface_distance: str = "cosine"
     deepface_embedding_size: int = 512
-    deepface_max_image_dim: int = 1280
     deepface_threshold: float = 0.60
 
+    # File Upload
+    max_file_size_mb: int = 5
+    allowed_extensions: str = "jpg,jpeg,png,webp"
+
     # Face Embedding File Upload
-    face_embedding_min_images: int = 3
     face_embedding_upload_dir: Path = Path("uploads/face_embedding_images")
-    face_embedding_max_file_size_mb: int = 5
-    face_embedding_allowed_extensions: str = "jpg,jpeg,png,webp"
 
     # Suspicious Verification File Upload
-    suspicious_verification_min_images: int = 3
     suspicious_verification_upload_dir: Path = Path(
         "uploads/suspicious_verification_images"
     )
-    suspicious_verification_max_file_size_mb: int = 5
-    suspicious_verification_allowed_extensions: str = "jpg,jpeg,png,webp"
 
 
 settings = Settings()
