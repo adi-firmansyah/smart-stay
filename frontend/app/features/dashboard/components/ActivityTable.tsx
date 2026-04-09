@@ -7,9 +7,6 @@ interface ActivityTableProps {
 }
 
 export const ActivityTable: FC<ActivityTableProps> = ({ accessLogs }) => {
-  /**
-   * Memformat Enum AccessMethod menjadi teks yang mudah dibaca.
-   */
   const formatMethod = (method: AccessMethod): string => {
     const methods: Record<AccessMethod, string> = {
       [AccessMethod.FACE_RECOGNITION]: "Face Recognition",
@@ -19,9 +16,6 @@ export const ActivityTable: FC<ActivityTableProps> = ({ accessLogs }) => {
     return methods[method] || method;
   };
 
-  /**
-   * Mendapatkan konfigurasi UI berdasarkan status boolean 'granted'.
-   */
   const getStatusConfig = (isGranted: boolean) => {
     return {
       label: isGranted ? "VALID" : "GAGAL",
@@ -39,7 +33,7 @@ export const ActivityTable: FC<ActivityTableProps> = ({ accessLogs }) => {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-gray-500 font-medium">
+            <tr className="border-b-2 border-gray-100 text-gray-600">
               <th className="pb-4 font-semibold">Waktu</th>
               <th className="pb-4 font-semibold">Nama Penghuni</th>
               <th className="pb-4 font-semibold">Metode Akses</th>

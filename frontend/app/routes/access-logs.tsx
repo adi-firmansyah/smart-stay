@@ -1,15 +1,18 @@
-import AccessLogFeature from "@/features/access-log";
+import { AccessLogFeature } from "@/features/access-log";
+import { getAccessLogs } from "@/features/access-log/api";
 import type { Route } from "./+types/access-logs";
+
+export async function loader({}: Route.LoaderArgs) {
+  return await getAccessLogs();
+}
 
 export const meta = ({}: Route.MetaArgs) => {
   return [
-    { title: "Resident" },
-    { name: "description", content: "Resident management" },
+    { title: "Log Aktivitas | Bumi Rafka Kost" },
+    { name: "description", content: "Lihat log aktivitas akses penghuni kost" },
   ];
 };
 
-const AccessLogs = () => {
+export default function AccessLogsRoute() {
   return <AccessLogFeature />;
-};
-
-export default AccessLogs;
+}

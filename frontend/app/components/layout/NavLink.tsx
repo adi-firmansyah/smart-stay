@@ -28,9 +28,7 @@ export const NavLink: FC<NavLinkProps> = ({
       )}
     >
       <Icon size={25} className="text-white flex-shrink-0" />
-      <span className="font-['Kumbh_Sans'] font-semibold text-base text-white">
-        {label}
-      </span>
+      <span className="font-semibold text-base text-white">{label}</span>
     </Link>
   );
 };

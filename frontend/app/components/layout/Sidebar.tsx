@@ -29,12 +29,12 @@ export const Sidebar: FC<SidebarProps> = ({
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
-      <div className="px-6 pt-6 pb-5 border-b border-[#009951] flex items-start justify-between">
+      <div className="px-6 pt-6 pb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-white text-xl font-bold font-['Inter'] leading-7">
+          <h1 className="text-white text-xl font-bold leading-7">
             Bumi Rafka Kost
           </h1>
-          <p className="text-[#BEDBFF] text-sm font-['Inter'] mt-1">
+          <p className="text-white/70 text-sm mt-1">
             Smart Gate Access Control
           </p>
         </div>
@@ -60,9 +60,7 @@ export const Sidebar: FC<SidebarProps> = ({
       <div className="px-5 pb-6">
         <button className="w-full flex items-center justify-center gap-3 px-6 py-2 border border-[#F8F1F1] rounded-[5px] h-[41px] hover:bg-white/10 transition-colors">
           <LogOut size={25} className="text-white" />
-          <span className="font-['Kumbh_Sans'] font-semibold text-[15px] text-white">
-            Keluar
-          </span>
+          <span className="font-semibold text-[15px] text-white">Keluar</span>
         </button>
       </div>
     </aside>

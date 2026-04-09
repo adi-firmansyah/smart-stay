@@ -5,9 +5,9 @@ import { useMemo, useState, type FC } from "react";
 import { Outlet, useLocation } from "react-router";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Dasbor", path: "/dasbor", icon: LayoutDashboard },
   { label: "Data Penghuni", path: "/data-penghuni", icon: Users },
-  { label: "Log aktivitas", path: "/log-aktivitas", icon: ClipboardList },
+  { label: "Log Aktivitas", path: "/log-aktivitas", icon: ClipboardList },
 ];
 
 const AppLayout: FC = () => {
@@ -15,9 +15,7 @@ const AppLayout: FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const activeLabel = useMemo((): string => {
-    return (
-      NAV_ITEMS.find((item) => item.path === pathname)?.label ?? "Dashboard"
-    );
+    return NAV_ITEMS.find((item) => item.path === pathname)?.label ?? "Dasbor";
   }, [pathname]);
 
   return (

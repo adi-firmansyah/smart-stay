@@ -3,8 +3,7 @@ import { getDashboardData } from "@/features/dashboard/api";
 import type { Route } from "./+types/dashboard";
 
 export async function loader({}: Route.LoaderArgs) {
-  const data = await getDashboardData();
-  return data;
+  return await getDashboardData();
 }
 
 export const meta = ({}: Route.MetaArgs) => {
