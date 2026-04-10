@@ -1,9 +1,10 @@
 import { exportLogsToCSV } from "@/lib/utils";
 import { type AccessLog } from "@/types";
 import { Download } from "lucide-react";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { useLoaderData } from "react-router";
 import { LogFilter } from "./components/LogFilter";
+import { LogPagination } from "./components/LogPagination";
 import { LogTable } from "./components/LogTable";
 
 export const AccessLogFeature: FC = () => {
@@ -12,6 +13,8 @@ export const AccessLogFeature: FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage: number = 10;
 
   const filteredLogs = initialLogs.filter((log: AccessLog) => {
     if (!log) return false;
@@ -33,6 +36,17 @@ export const AccessLogFeature: FC = () => {
 
     return matchesSearch && matchesStatus && matchesDate;
   });
+
+  const totalPages: number = Math.ceil(filteredLogs.length / itemsPerPage);
+
+  const paginatedLogs: AccessLog[] = filteredLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, dateFilter]);
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen space-y-6">
@@ -56,7 +70,15 @@ export const AccessLogFeature: FC = () => {
           setDateFilter={setDateFilter}
         />
 
-        <LogTable logs={filteredLogs} />
+        <LogTable logs={paginatedLogs} />
+
+        <LogPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLogs.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

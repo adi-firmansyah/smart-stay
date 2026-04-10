@@ -35,14 +35,24 @@ async def get_residents(
 async def create_resident(
     db: DBSession, create_resident_request: CreateResidentRequest
 ) -> Resident:
-    existing: Resident | None = db.execute(
-        select(Resident).where(Resident.rfid_code == create_resident_request.rfid_code)
-    ).scalar_one_or_none()
+    stmt = select(Resident).where(
+        (Resident.rfid_code == create_resident_request.rfid_code)
+        | (Resident.pin == create_resident_request.pin)
+        | (Resident.room_number == create_resident_request.room_number)
+    )
+    existing: Resident | None = db.execute(stmt).scalar_one_or_none()
 
     if existing:
+        if existing.rfid_code == create_resident_request.rfid_code:
+            detail = "Kode RFID sudah digunakan oleh penghuni lain."
+        elif existing.pin == create_resident_request.pin:
+            detail = "PIN sudah digunakan oleh penghuni lain."
+        else:
+            detail = "Nomor kamar sudah digunakan oleh penghuni lain."
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kode RFID sudah digunakan oleh penghuni lain.",
+            detail=detail,
         )
 
     new_resident: Resident = Resident(**create_resident_request.model_dump())

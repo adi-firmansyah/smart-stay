@@ -1,6 +1,9 @@
 import { cn, formatDateFull } from "@/lib/utils";
 import { type AccessLog, AccessMethod } from "@/types";
+import { AlertCircle, Image as ImageIcon } from "lucide-react";
 import { type FC } from "react";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
   const getMethodBadgeClass = (method: AccessMethod) => {
@@ -26,7 +29,7 @@ export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
             <th className="pb-4 font-semibold">Metode</th>
             <th className="pb-4 font-semibold">Status</th>
             <th className="pb-4 font-semibold">Akurasi</th>
-            <th className="pb-4 font-semibold">Lokasi</th>
+            <th className="pb-4 font-semibold">Foto Mencurigakan</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -48,7 +51,8 @@ export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
                   </td>
                   <td className="py-4 font-medium text-gray-700">
                     {log.resident?.name ?? (
-                      <span className="text-red-500 font-semibold">
+                      <span className="text-red-500 flex items-center gap-1.5 font-bold">
+                        <AlertCircle size={14} />
                         Orang Tidak Dikenal
                       </span>
                     )}
@@ -56,7 +60,7 @@ export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
                   <td className="py-4">
                     <span
                       className={cn(
-                        "px-3 py-1 text-[11px] font-semibold rounded-full",
+                        "px-3 py-1 text-[11px] font-semibold rounded-full uppercase tracking-tighter",
                         getMethodBadgeClass(log.method),
                       )}
                     >
@@ -94,16 +98,33 @@ export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
                         </span>
                       </div>
                     ) : (
-                      "-"
+                      <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="py-4 text-gray-600">Main Gate</td>
+                  <td className="py-4">
+                    {log.suspicious_image_path ? (
+                      <div className="relative group w-12 h-12">
+                        <img
+                          src={`${API_BASE_URL}/${log.suspicious_image_path}`}
+                          alt="Suspicious Log"
+                          className="w-12 h-12 object-cover rounded-lg border border-slate-200 shadow-sm transition-transform group-hover:scale-125 group-hover:z-10 cursor-zoom-in"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-slate-300">
+                        <ImageIcon size={18} />
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })
           ) : (
             <tr>
-              <td colSpan={6} className="py-8 text-center text-gray-500">
+              <td
+                colSpan={6}
+                className="py-12 text-center text-gray-500 italic"
+              >
                 Tidak ada aktivitas ditemukan.
               </td>
             </tr>

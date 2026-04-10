@@ -57,14 +57,24 @@ class Resident(Base):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
-    room_number: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    room_number: Mapped[int] = mapped_column(
+        Integer,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
     rfid_code: Mapped[str] = mapped_column(
         String(20),
         unique=True,
         nullable=False,
         index=True,
     )
-    pin: Mapped[str] = mapped_column(String(8), nullable=False)
+    pin: Mapped[str] = mapped_column(
+        String(8),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
 
     # Relationships
     face_embeddings: Mapped[list[FaceEmbedding]] = relationship(
@@ -107,7 +117,26 @@ class AccessLog(Base):
     )
     granted: Mapped[bool] = mapped_column(Boolean, nullable=False, index=True)
     similarity: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
-    suspicious_image_path: Mapped[str] = mapped_column(String(100), nullable=True)
+    suspicious_image_path: Mapped[str] = mapped_column(Text, nullable=True)
 
     # Relationships
     resident: Mapped[Resident | None] = relationship(back_populates="access_logs")
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    username: Mapped[str] = mapped_column(
+        String(50),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
+class Gate(Base):
+    __tablename__ = "gates"
+
+    locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

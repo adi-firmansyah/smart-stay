@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     deepface_threshold: float = 0.60
 
     # ESP32-CAM
-    esp32_cam_url: str = "http://esp32-cam/capture"
+    esp32_cam_url: str = "http://localhost/cam-lo.jpg"
 
     # File Upload
     max_file_size_mb: int = 5

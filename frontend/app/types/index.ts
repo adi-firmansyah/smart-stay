@@ -20,6 +20,14 @@ export interface Resident extends Base {
   room_number: number;
 }
 
+export interface CreateResidentRequest {
+  name: string;
+  phone: string;
+  room_number: number;
+  rfid_code: string;
+  pin: string;
+}
+
 export interface FaceEmbedding extends Base {
   resident_id: string;
   image_path: string;

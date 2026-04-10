@@ -58,14 +58,14 @@ def read_upload_file_to_numpy(file: UploadFile) -> np.ndarray:
 
 
 def save_image_to_disk(image_data: np.ndarray, directory: Path, filename: str) -> str:
-    """Menyimpan matriks numpy ke disk dan mengembalikan path absolut."""
+    """Menyimpan matriks numpy ke disk dan mengembalikan path relatif."""
     directory.mkdir(parents=True, exist_ok=True)
     target_path: Path = directory / filename
     success: bool = cv2.imwrite(str(target_path), image_data)
 
     if not success:
         raise IOError(f"Gagal menyimpan gambar ke {target_path}")
-    return str(target_path.resolve())
+    return target_path.as_posix()
 
 
 def extract_embedding(image_data: np.ndarray) -> list[float]:

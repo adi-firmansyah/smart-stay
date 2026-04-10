@@ -61,7 +61,7 @@ export const ActivityTable: FC<ActivityTableProps> = ({ accessLogs }) => {
                     <td className="py-4 text-gray-500">{timeStr}</td>
                     <td className="py-4 font-medium text-gray-800">
                       {log.resident?.name ?? (
-                        <span className="text-red-500 font-semibold">
+                        <span className="text-red-500">
                           Orang Tidak Dikenal
                         </span>
                       )}
