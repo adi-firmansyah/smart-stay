@@ -8,11 +8,11 @@ import httpx
 import numpy as np
 from deepface import DeepFace
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update
 
 from src.config import settings
 from src.database import DBSession
-from src.models import AccessLog, AccessMethodEnum
+from src.models import AccessLog, AccessMethodEnum, Gate
 
 
 def validate_image_upload(file: UploadFile) -> None:
@@ -123,3 +123,19 @@ async def handle_suspicious_activity(
             return save_image_to_disk(image_to_save, save_dir, filename)
 
     return None
+
+
+def update_gate_lock_status(db: DBSession, is_locked: bool) -> bool:
+    """
+    Memperbarui status kolom 'locked' untuk seluruh entri pada tabel gates.
+    Mengembalikan True jika pembaruan berhasil.
+    """
+    try:
+        stmt = update(Gate).values(locked=is_locked)
+        db.execute(stmt)
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Gagal memperbarui status gerbang: {str(e)}")
+        return False

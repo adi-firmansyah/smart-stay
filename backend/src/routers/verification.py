@@ -16,6 +16,7 @@ from src.utils import (
     extract_embedding,
     handle_suspicious_activity,
     save_image_to_disk,
+    update_gate_lock_status,
 )
 
 router: APIRouter = APIRouter(prefix="/verification", tags=["Verification"])
@@ -75,6 +76,9 @@ async def verify_by_face(db: DBSession) -> bool:
         )
     )
 
+    if is_granted:
+        update_gate_lock_status(db, is_locked=False)
+
     try:
         db.commit()
     except Exception:
@@ -109,7 +113,16 @@ async def verify_by_rfid(db: DBSession, rfid_code: str = Body(..., embed=True)) 
             image_path=suspicious_path,
         )
     )
-    db.commit()
+
+    if is_granted:
+        update_gate_lock_status(db, is_locked=False)
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     return is_granted
 
 
@@ -134,5 +147,14 @@ async def verify_by_pin(db: DBSession, pin: str = Body(..., embed=True)) -> bool
             image_path=suspicious_path,
         )
     )
-    db.commit()
+
+    if is_granted:
+        update_gate_lock_status(db, is_locked=False)
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     return is_granted
