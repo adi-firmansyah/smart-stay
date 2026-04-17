@@ -16,10 +16,12 @@ from src.utils import (
     extract_embedding,
     handle_suspicious_activity,
     save_image_to_disk,
-    update_gate_lock_status,
 )
 
-router: APIRouter = APIRouter(prefix="/verification", tags=["Verification"])
+router: APIRouter = APIRouter(
+    prefix="/verification",
+    tags=["Verification"],
+)
 
 
 @router.post(
@@ -35,14 +37,12 @@ async def verify_by_face(db: DBSession) -> bool:
 
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(settings.esp32_cam_url, timeout=5.0)
+            resp = await client.get(settings.esp32_cam_url, timeout=15.0)
 
             if resp.status_code == 200:
                 raw_image = decode_image_from_buffer(resp.content)
-
                 filename: str = f"face_{uuid4().hex}.jpg"
                 saved_image_path = save_image_to_disk(raw_image, upload_dir, filename)
-
                 query_embedding: list[float] = extract_embedding(raw_image)
 
                 stmt = (
@@ -60,9 +60,10 @@ async def verify_by_face(db: DBSession) -> bool:
                 if result:
                     resident_id = cast(UUID, result.resident_id)
                     similarity_score = float(result.sim)
-
-    except Exception as e:
-        print(f"Error pada verifikasi wajah: {str(e)}")
+    except Exception:
+        if saved_image_path and Path(saved_image_path).exists():
+            Path(saved_image_path).unlink()
+        raise
 
     is_granted: bool = similarity_score >= settings.deepface_threshold
 
@@ -75,9 +76,6 @@ async def verify_by_face(db: DBSession) -> bool:
             image_path=saved_image_path,
         )
     )
-
-    if is_granted:
-        update_gate_lock_status(db, is_locked=False)
 
     try:
         db.commit()
@@ -98,6 +96,7 @@ async def verify_by_rfid(db: DBSession, rfid_code: str = Body(..., embed=True)) 
     res = db.execute(
         select(Resident).where(Resident.rfid_code == rfid_code)
     ).scalar_one_or_none()
+
     is_granted: bool = res is not None
     suspicious_path: str | None = None
 
@@ -114,9 +113,6 @@ async def verify_by_rfid(db: DBSession, rfid_code: str = Body(..., embed=True)) 
         )
     )
 
-    if is_granted:
-        update_gate_lock_status(db, is_locked=False)
-
     try:
         db.commit()
     except Exception:
@@ -132,6 +128,7 @@ async def verify_by_rfid(db: DBSession, rfid_code: str = Body(..., embed=True)) 
 )
 async def verify_by_pin(db: DBSession, pin: str = Body(..., embed=True)) -> bool:
     res = db.execute(select(Resident).where(Resident.pin == pin)).scalar_one_or_none()
+
     is_granted: bool = res is not None
     suspicious_path: str | None = None
 
@@ -147,9 +144,6 @@ async def verify_by_pin(db: DBSession, pin: str = Body(..., embed=True)) -> bool
             image_path=suspicious_path,
         )
     )
-
-    if is_granted:
-        update_gate_lock_status(db, is_locked=False)
 
     try:
         db.commit()

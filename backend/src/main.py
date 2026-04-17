@@ -12,6 +12,7 @@ from src.database import check_db, close_db, init_db
 from src.routers.access_logs import router as access_logs_router
 from src.routers.dashboard import router as dashboard_router
 from src.routers.face_embeddings import router as face_embeddings_router
+from src.routers.gate import router as gate_router
 from src.routers.residents import router as residents_router
 from src.routers.verification import router as verification_router
 
@@ -61,4 +62,5 @@ app.include_router(residents_router)
 app.include_router(face_embeddings_router)
 app.include_router(access_logs_router)
 app.include_router(verification_router)
+app.include_router(gate_router)
 app.include_router(dashboard_router)
