@@ -2,6 +2,12 @@ import { type CreateResidentRequest, type Resident } from "@/types";
 
 const BASE_API_URL: string = import.meta.env.VITE_API_URL;
 
+export interface RfidCaptureEvent {
+  event_id: number;
+  uid: string | null;
+  captured_at: string | null;
+}
+
 export async function getResidents(): Promise<Resident[]> {
   const response = await fetch(`${BASE_API_URL}/residents`);
 
@@ -122,6 +128,24 @@ export const uploadFaceSamples = async (
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || "Gagal mengunggah sampel wajah.");
+  }
+
+  return response.json();
+};
+
+export const getLatestCapturedRfid = async (
+  afterEventId: number,
+): Promise<RfidCaptureEvent> => {
+  const params: URLSearchParams = new URLSearchParams({
+    after_event_id: String(afterEventId),
+  });
+
+  const response: Response = await fetch(
+    `${BASE_API_URL}/verification/rfid/capture/latest?${params.toString()}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Gagal membaca RFID dari perangkat");
   }
 
   return response.json();

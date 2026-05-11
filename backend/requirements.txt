@@ -8,3 +8,4 @@ deepface
 tf-keras
 python-multipart
 logfire[fastapi]
+PyJWT

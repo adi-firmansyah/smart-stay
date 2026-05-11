@@ -23,6 +23,11 @@ const LandingPage: FC = () => {
   const [activeSection, setActiveSection] = useState<string>("home");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+  const [selectedRoom, setSelectedRoom] = useState<{
+    title: string;
+    video: string;
+  } | null>(null);
+
   useEffect((): (() => void) => {
     const handleScroll = (): void => {
       const sections: string[] = ["home", "fitur", "kamar", "location"];
@@ -30,6 +35,7 @@ const LandingPage: FC = () => {
 
       for (const id of sections) {
         const element = document.getElementById(id);
+
         if (element) {
           const offsetTop: number = element.offsetTop;
           const height: number = element.offsetHeight;
@@ -46,6 +52,7 @@ const LandingPage: FC = () => {
 
     window.addEventListener("scroll", handleScroll);
     handleScroll();
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -54,7 +61,9 @@ const LandingPage: FC = () => {
     id: string,
   ): void => {
     e.preventDefault();
+
     const element = document.getElementById(id);
+
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
       setActiveSection(id);
@@ -67,11 +76,13 @@ const LandingPage: FC = () => {
 
       <HeroSection onCheckRooms={scrollToSection} />
 
+      {/* FITUR */}
       <SectionContainer id="fitur" className="bg-white">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1e293b] mb-4">
             Teknologi Smart-Stay
           </h2>
+
           <p className="text-slate-500">
             Satu-satunya kost dengan integrasi sistem keamanan wajah dan
             pemantauan real-time.
@@ -86,18 +97,21 @@ const LandingPage: FC = () => {
               icon={<ScanFace size={24} />}
               accentColor="dark"
             />
+
             <FeatureCard
               title="High-Speed WiFi"
               description="Koneksi internet stabil untuk kebutuhan kerja dan hiburan."
               icon={<Wifi size={24} />}
               accentColor="teal"
             />
+
             <FeatureCard
               title="Smart Monitoring"
               description="Pantau status akses gerbang melalui dashboard penghuni."
               icon={<ShieldCheck size={24} />}
               accentColor="indigo"
             />
+
             <FeatureCard
               title="All-In Cost"
               description="Biaya sewa sudah termasuk iuran listrik dan air bersih."
@@ -105,10 +119,12 @@ const LandingPage: FC = () => {
               accentColor="dark"
             />
           </div>
+
           <AccessMonitorMockup />
         </div>
       </SectionContainer>
 
+      {/* KAMAR */}
       <SectionContainer id="kamar" className="bg-slate-50">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1e293b] mb-4">
@@ -117,10 +133,15 @@ const LandingPage: FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* PAVILIUN */}
           <RoomCard
             title="Tipe Paviliun Lengkap"
             description="Hunian luas dengan pembagian ruangan layaknya rumah mungil, cocok untuk kenyamanan ekstra."
-            image="https://images.unsplash.com/photo-1522771731470-8a3ce544a8b2?q=80&w=2070"
+            images={[
+              "/images/pavilliun-1.jpeg",
+              "/images/pavilliun-2.jpeg",
+              "/images/pavilliun-3.jpeg",
+            ]}
             price="Rp 850.000"
             units={6}
             features={[
@@ -128,12 +149,25 @@ const LandingPage: FC = () => {
               { label: "Dapur & R. Cuci", icon: Droplets },
               { label: "K. Mandi Dalam", icon: CheckCircle2 },
             ]}
-            onDetailClick={() => setIsModalOpen(true)}
+            onDetailClick={() => {
+              setSelectedRoom({
+                title: "Tipe Paviliun Lengkap",
+                video: "/videos/pavilliun.mp4",
+              });
+
+              setIsModalOpen(true);
+            }}
           />
+
+          {/* STUDIO */}
           <RoomCard
             title="Tipe Studio Standard"
             description="Kamar minimalis fungsional dengan fasilitas esensial lengkap untuk efisiensi harian."
-            image="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2070"
+            images={[
+              "/images/studio-1.jpeg",
+              "/images/studio-2.jpeg",
+              "/images/studio-3.jpeg",
+            ]}
             price="Rp 850.000"
             units={2}
             features={[
@@ -141,7 +175,14 @@ const LandingPage: FC = () => {
               { label: "K. Mandi Dalam", icon: CheckCircle2 },
               { label: "WiFi Gratis", icon: Wifi },
             ]}
-            onDetailClick={() => setIsModalOpen(true)}
+            onDetailClick={() => {
+              setSelectedRoom({
+                title: "Tipe Studio Standard",
+                video: "/videos/studio.mp4",
+              });
+
+              setIsModalOpen(true);
+            }}
           />
         </div>
       </SectionContainer>
@@ -150,9 +191,12 @@ const LandingPage: FC = () => {
 
       <Footer />
 
+      {/* MODAL */}
       <RoomDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        video={selectedRoom?.video || ""}
+        title={selectedRoom?.title || ""}
       />
 
       <ScrollToTop />

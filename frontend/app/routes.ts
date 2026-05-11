@@ -7,6 +7,7 @@ import {
 
 export default [
   index("routes/landing-page.tsx"),
+  route("login", "routes/login.tsx"),
 
   layout("layouts/AppLayout.tsx", [
     route("dasbor", "routes/dashboard.tsx"),

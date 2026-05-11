@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import cast
@@ -5,7 +6,7 @@ from uuid import UUID, uuid4
 
 import httpx
 import numpy as np
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException, status
 from sqlalchemy import select
 
 from src.config import settings
@@ -24,6 +25,19 @@ router: APIRouter = APIRouter(
 )
 
 
+rfid_capture_event_id: int = 0
+rfid_capture_uid: str | None = None
+rfid_capture_at: datetime | None = None
+
+
+def build_rfid_capture_response() -> dict[str, int | str | None]:
+    return {
+        "event_id": rfid_capture_event_id,
+        "uid": rfid_capture_uid,
+        "captured_at": rfid_capture_at.isoformat() if rfid_capture_at else None,
+    }
+
+
 @router.post(
     path="/face",
     description="Endpoint untuk verifikasi wajah dengan penyimpanan log citra pada kolom image_path.",
@@ -35,35 +49,38 @@ async def verify_by_face(db: DBSession) -> bool:
     saved_image_path: str | None = None
     upload_dir: Path = Path(settings.face_verification_upload_dir)
 
-    try:
-        async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient() as client:
+        try:
             resp = await client.get(settings.esp32_cam_url, timeout=15.0)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY)
 
-            if resp.status_code == 200:
-                raw_image = decode_image_from_buffer(resp.content)
-                filename: str = f"face_{uuid4().hex}.jpg"
-                saved_image_path = save_image_to_disk(raw_image, upload_dir, filename)
-                query_embedding: list[float] = extract_embedding(raw_image)
+            raw_image = decode_image_from_buffer(resp.content)
+            filename: str = f"face_{uuid4().hex}.jpg"
+            saved_image_path = save_image_to_disk(raw_image, upload_dir, filename)
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                stmt = (
-                    select(
-                        FaceEmbedding.resident_id,
-                        (
-                            1 - FaceEmbedding.embedding.cosine_distance(query_embedding)
-                        ).label("sim"),
-                    )
-                    .order_by(FaceEmbedding.embedding.cosine_distance(query_embedding))
-                    .limit(1)
-                )
-
-                result = db.execute(stmt).first()
-                if result:
-                    resident_id = cast(UUID, result.resident_id)
-                    similarity_score = float(result.sim)
+    try:
+        query_embedding: list[float] = extract_embedding(raw_image)
+        stmt = (
+            select(
+                FaceEmbedding.resident_id,
+                (1 - FaceEmbedding.embedding.cosine_distance(query_embedding)).label(
+                    "sim"
+                ),
+            )
+            .order_by(FaceEmbedding.embedding.cosine_distance(query_embedding))
+            .limit(1)
+        )
+        result = db.execute(stmt).first()
+        if result:
+            resident_id = cast(UUID, result.resident_id)
+            similarity_score = float(result.sim)
     except Exception:
-        if saved_image_path and Path(saved_image_path).exists():
-            Path(saved_image_path).unlink()
-        raise
+        pass
 
     is_granted: bool = similarity_score >= settings.deepface_threshold
 
@@ -120,6 +137,45 @@ async def verify_by_rfid(db: DBSession, rfid_code: str = Body(..., embed=True)) 
         raise
 
     return is_granted
+
+
+@router.post(
+    path="/rfid/capture",
+    description="Endpoint untuk menyimpan UID RFID terakhir hasil mode baca pada perangkat.",
+)
+async def capture_rfid_uid(
+    rfid_code: str = Body(..., embed=True)
+) -> dict[str, int | str | None]:
+    global rfid_capture_at, rfid_capture_event_id, rfid_capture_uid
+
+    uid = rfid_code.strip().upper()
+    if not uid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="rfid_code tidak boleh kosong.",
+        )
+
+    rfid_capture_event_id += 1
+    rfid_capture_uid = uid
+    rfid_capture_at = datetime.now(timezone.utc)
+    return build_rfid_capture_response()
+
+
+@router.get(
+    path="/rfid/capture/latest",
+    description="Endpoint untuk mengambil UID RFID terakhir untuk kebutuhan auto-fill form pendaftaran penghuni.",
+)
+async def get_latest_captured_rfid(
+    after_event_id: int = 0,
+) -> dict[str, int | str | None]:
+    latest_event_id = rfid_capture_event_id
+    if latest_event_id <= after_event_id:
+        return {
+            "event_id": latest_event_id,
+            "uid": None,
+            "captured_at": None,
+        }
+    return build_rfid_capture_response()
 
 
 @router.post(

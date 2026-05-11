@@ -49,5 +49,10 @@ class Settings(BaseSettings):
         "uploads/suspicious-verification-images"
     )
 
+    # JWT / Auth
+    jwt_secret_key: str = "CHANGEME_REPLACE_WITH_STRONG_SECRET"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+
 
 settings = Settings()

@@ -14,6 +14,7 @@ interface SidebarProps {
   isOpen: boolean;
   currentPath: string;
   onClose: () => void;
+  onLogout: () => void;
 }
 
 export const Sidebar: FC<SidebarProps> = ({
@@ -21,6 +22,7 @@ export const Sidebar: FC<SidebarProps> = ({
   isOpen,
   currentPath,
   onClose,
+  onLogout,
 }) => {
   return (
     <aside
@@ -58,7 +60,10 @@ export const Sidebar: FC<SidebarProps> = ({
       </nav>
 
       <div className="px-5 pb-6">
-        <button className="w-full flex items-center justify-center gap-3 px-6 py-2 border border-[#F8F1F1] rounded-[5px] h-[41px] hover:bg-white/10 transition-colors">
+        <button
+          className="w-full flex items-center justify-center gap-3 px-6 py-2 border border-[#F8F1F1] rounded-[5px] h-[41px] hover:bg-white/10 transition-colors"
+          onClick={onLogout}
+        >
           <LogOut size={25} className="text-white" />
           <span className="font-semibold text-[15px] text-white">Keluar</span>
         </button>

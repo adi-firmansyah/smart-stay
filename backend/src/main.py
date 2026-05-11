@@ -15,6 +15,7 @@ from src.routers.face_embeddings import router as face_embeddings_router
 from src.routers.gate import router as gate_router
 from src.routers.residents import router as residents_router
 from src.routers.verification import router as verification_router
+from src.routers.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -64,3 +65,4 @@ app.include_router(access_logs_router)
 app.include_router(verification_router)
 app.include_router(gate_router)
 app.include_router(dashboard_router)
+app.include_router(auth_router)

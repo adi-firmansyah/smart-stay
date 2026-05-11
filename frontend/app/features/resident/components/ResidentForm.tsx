@@ -2,13 +2,16 @@ import { type CreateResidentRequest, type Resident } from "@/types";
 import {
   CreditCard,
   DoorOpen,
+  LoaderCircle,
+  Radio,
   Save,
   ShieldCheck,
   Smartphone,
   User,
   X,
 } from "lucide-react";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useRef, useState } from "react";
+import { getLatestCapturedRfid } from "../api";
 
 interface ResidentFormProps {
   initialData?: Resident;
@@ -30,6 +33,65 @@ export const ResidentForm: FC<ResidentFormProps> = ({
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isWaitingRfid, setIsWaitingRfid] = useState<boolean>(false);
+  const [rfidHint, setRfidHint] = useState<string>("");
+  const pollTimeoutRef = useRef<number | null>(null);
+
+  const clearRfidTimeout = (): void => {
+    if (pollTimeoutRef.current) {
+      window.clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearRfidTimeout();
+    };
+  }, []);
+
+  const handleReadRfid = async (): Promise<void> => {
+    if (isWaitingRfid) return;
+
+    setIsWaitingRfid(true);
+    setRfidHint("Tekan tombol D di keypad, lalu tap kartu RFID.");
+
+    try {
+      const baseline = await getLatestCapturedRfid(0);
+      const baselineEventId = baseline.event_id;
+      const startedAt = Date.now();
+      const timeoutMs = 30000;
+
+      const poll = async (): Promise<void> => {
+        const latest = await getLatestCapturedRfid(baselineEventId);
+
+        if (latest.uid) {
+          setFormData((prev) => ({ ...prev, rfid_code: latest.uid ?? "" }));
+          setRfidHint("Kode RFID berhasil terbaca otomatis.");
+          setIsWaitingRfid(false);
+          clearRfidTimeout();
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          setRfidHint("Waktu tunggu habis. Tekan Baca RFID lagi.");
+          setIsWaitingRfid(false);
+          clearRfidTimeout();
+          return;
+        }
+
+        pollTimeoutRef.current = window.setTimeout(() => {
+          void poll();
+        }, 1000);
+      };
+
+      await poll();
+    } catch (error) {
+      setIsWaitingRfid(false);
+      setRfidHint((error as Error).message || "Gagal membaca RFID.");
+      clearRfidTimeout();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -136,6 +198,27 @@ export const ResidentForm: FC<ResidentFormProps> = ({
                 placeholder="Contoh: A1B2C3D4"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm uppercase font-mono"
               />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleReadRfid();
+                  }}
+                  disabled={isWaitingRfid}
+                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isWaitingRfid ? (
+                    <LoaderCircle size={14} className="animate-spin" />
+                  ) : (
+                    <Radio size={14} />
+                  )}
+                  {isWaitingRfid ? "Menunggu Tap RFID..." : "Baca RFID"}
+                </button>
+                <span className="text-xs text-gray-500">
+                  Mode keypad: tekan D
+                </span>
+              </div>
+              {rfidHint && <p className="text-xs text-gray-500">{rfidHint}</p>}
             </div>
           )}
 

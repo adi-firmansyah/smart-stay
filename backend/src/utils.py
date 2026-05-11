@@ -1,18 +1,22 @@
+from datetime import datetime, timedelta
 import os
 import time
 from pathlib import Path
 from typing import Any, cast
+from uuid import UUID
 
 import cv2
 import httpx
+import jwt
 import numpy as np
 from deepface import DeepFace
-from fastapi import HTTPException, UploadFile, status
+from fastapi import Depends, HTTPException, UploadFile, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import desc, select
 
 from src.config import settings
 from src.database import DBSession
-from src.models import AccessLog, AccessMethodEnum
+from src.models import AccessLog, AccessMethodEnum, Admin
 
 
 def validate_image_upload(file: UploadFile) -> None:
@@ -123,3 +127,72 @@ async def handle_suspicious_activity(
             return save_image_to_disk(image_to_save, save_dir, filename)
 
     return None
+
+
+def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
+    now = datetime.utcnow()
+    expire = now + timedelta(
+        minutes=expires_minutes or settings.access_token_expire_minutes
+    )
+    payload: dict[str, Any] = {
+        "sub": subject,
+        "iat": int(now.timestamp()),
+        "exp": int(expire.timestamp()),
+    }
+    token = jwt.encode(
+        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
+    # PyJWT returns str in newer versions
+    if isinstance(token, bytes):
+        token = token.decode()
+    return token
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    try:
+        payload = jwt.decode(
+            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+
+
+security = HTTPBearer()
+
+
+async def get_current_admin(
+    db: DBSession, credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Admin:
+    """Dependency untuk mendapatkan admin yang terautentikasi dari JWT token."""
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    admin_id_str = payload.get("sub")
+
+    if not admin_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
+        )
+
+    try:
+        admin_id = UUID(admin_id_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin ID"
+        )
+
+    stmt = select(Admin).where(Admin.id == admin_id)
+    admin = db.execute(stmt).scalar_one_or_none()
+
+    if not admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin not found"
+        )
+
+    return admin

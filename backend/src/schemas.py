@@ -90,3 +90,28 @@ class DashboardStatsResponse(BaseModel):
     total_valid_access: int
     total_invalid_access: int
     access_logs: list[AccessLogResponse]
+
+
+# --- Authentication schemas (Admin login) ---
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class AdminResponse(BaseModel):
+    id: UUID
+    name: str
+    username: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class LoginResponse(TokenResponse):
+    admin: AdminResponse | None = None

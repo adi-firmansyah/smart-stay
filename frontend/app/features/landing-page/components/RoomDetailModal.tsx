@@ -13,6 +13,7 @@ const FacilityGroup: FC<FacilityGroupProps> = ({ title, icon, items }) => (
       {icon}
       <h4 className="font-bold">{title}</h4>
     </div>
+
     <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {items.map((item: string, index: number) => (
         <li key={index} className="flex items-center text-sm text-slate-600">
@@ -27,26 +28,33 @@ const FacilityGroup: FC<FacilityGroupProps> = ({ title, icon, items }) => (
 interface RoomDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
+  video: string;
+  title: string;
 }
 
 export const RoomDetailModal: FC<RoomDetailModalProps> = ({
   isOpen,
   onClose,
+  video,
+  title,
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z- bg-[#1e293b]/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-[#1e293b]/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        {/* HEADER */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 p-6 flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-slate-100 rounded-lg text-[#1e293b]">
               <Info size={24} />
             </div>
+
             <h3 className="text-2xl font-bold text-[#1e293b]">
-              Informasi Kamar & Fasilitas
+              Informasi {title}
             </h3>
           </div>
+
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors"
@@ -55,7 +63,30 @@ export const RoomDetailModal: FC<RoomDetailModalProps> = ({
           </button>
         </div>
 
+        {/* CONTENT */}
         <div className="p-6 md:p-8 space-y-8">
+          {/* VIDEO */}
+          <div>
+            <h4 className="text-xl font-bold text-[#1e293b] mb-4">
+              Video Tour {title}
+            </h4>
+
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+              <video
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-[250px] md:h-[450px] object-cover"
+              >
+                <source src={video} type="video/mp4" />
+                Browser kamu tidak mendukung video.
+              </video>
+            </div>
+          </div>
+
+          {/* FASILITAS */}
           <FacilityGroup
             title="Fasilitas Kamar (All-In)"
             icon={<Info size={20} />}
@@ -69,11 +100,13 @@ export const RoomDetailModal: FC<RoomDetailModalProps> = ({
             ]}
           />
 
+          {/* HARGA */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div>
               <h4 className="text-lg font-bold text-[#1e293b] mb-2">
                 Skema Harga
               </h4>
+
               <p className="text-sm text-slate-600">
                 Harga sewa kost dimulai dari{" "}
                 <span className="font-bold text-[#1e293b]">
@@ -87,6 +120,7 @@ export const RoomDetailModal: FC<RoomDetailModalProps> = ({
                 .
               </p>
             </div>
+
             <button
               onClick={onClose}
               className="w-full md:w-auto bg-[#1e293b] text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-colors shrink-0"
