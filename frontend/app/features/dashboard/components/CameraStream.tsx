@@ -73,7 +73,7 @@ export const CameraStream: FC<CameraStreamProps> = ({
             className={cn(
               "p-2 rounded-lg transition-all active:scale-95",
               isLive
-                ? "text-green-600 hover:bg-green-50"
+                ? "text-emerald-700 hover:bg-emerald-50"
                 : "text-slate-400 hover:bg-slate-100",
             )}
             title={isLive ? "Matikan Kamera" : "Nyalakan Kamera"}
@@ -123,7 +123,7 @@ export const CameraStream: FC<CameraStreamProps> = ({
             {!isLive && (
               <button
                 onClick={toggleLive}
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20"
+                className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700"
               >
                 Aktifkan Stream
               </button>

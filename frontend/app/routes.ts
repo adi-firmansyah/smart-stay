@@ -9,7 +9,7 @@ export default [
   index("routes/landing-page.tsx"),
   route("login", "routes/login.tsx"),
 
-  layout("layouts/AppLayout.tsx", [
+  layout("components/AppLayout.tsx", [
     route("dasbor", "routes/dashboard.tsx"),
     route("data-penghuni", "routes/residents.tsx"),
     route("log-aktivitas", "routes/access-logs.tsx"),

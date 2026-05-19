@@ -35,6 +35,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isWaitingRfid, setIsWaitingRfid] = useState<boolean>(false);
   const [rfidHint, setRfidHint] = useState<string>("");
+  const [latestRfidUid, setLatestRfidUid] = useState<string>("");
   const pollTimeoutRef = useRef<number | null>(null);
 
   const clearRfidTimeout = (): void => {
@@ -54,7 +55,10 @@ export const ResidentForm: FC<ResidentFormProps> = ({
     if (isWaitingRfid) return;
 
     setIsWaitingRfid(true);
-    setRfidHint("Tekan tombol D di keypad, lalu tap kartu RFID.");
+    setLatestRfidUid("");
+    setRfidHint(
+      "Tekan D di keypad untuk CAPTURE, lalu tap kartu RFID ke reader.",
+    );
 
     try {
       const baseline = await getLatestCapturedRfid(0);
@@ -66,15 +70,19 @@ export const ResidentForm: FC<ResidentFormProps> = ({
         const latest = await getLatestCapturedRfid(baselineEventId);
 
         if (latest.uid) {
-          setFormData((prev) => ({ ...prev, rfid_code: latest.uid ?? "" }));
-          setRfidHint("Kode RFID berhasil terbaca otomatis.");
+          const rfidUid = latest.uid.toUpperCase();
+          setFormData((prev) => ({ ...prev, rfid_code: rfidUid }));
+          setLatestRfidUid(rfidUid);
+          setRfidHint("✓ UID RFID berhasil diambil dan diisi otomatis.");
           setIsWaitingRfid(false);
           clearRfidTimeout();
           return;
         }
 
         if (Date.now() - startedAt >= timeoutMs) {
-          setRfidHint("Waktu tunggu habis. Tekan Baca RFID lagi.");
+          setRfidHint(
+            "⏱ Waktu tunggu habis (30s). Klik Ambil UID RFID untuk retry.",
+          );
           setIsWaitingRfid(false);
           clearRfidTimeout();
           return;
@@ -88,7 +96,10 @@ export const ResidentForm: FC<ResidentFormProps> = ({
       await poll();
     } catch (error) {
       setIsWaitingRfid(false);
-      setRfidHint((error as Error).message || "Gagal membaca RFID.");
+      setRfidHint(
+        (error as Error).message ||
+          "⚠ Gagal membaca RFID. Cek koneksi ke server.",
+      );
       clearRfidTimeout();
     }
   };
@@ -136,7 +147,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <User size={16} className="text-blue-500" /> Nama Lengkap
+              <User size={16} className="text-emerald-600" /> Nama Lengkap
             </label>
             <input
               required
@@ -145,13 +156,14 @@ export const ResidentForm: FC<ResidentFormProps> = ({
               value={formData.name}
               onChange={handleChange}
               placeholder="Masukkan nama lengkap"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm"
             />
           </div>
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Smartphone size={16} className="text-blue-500" /> Nomor Telepon
+              <Smartphone size={16} className="text-emerald-600" /> Nomor
+              Telepon
             </label>
             <input
               required
@@ -163,13 +175,13 @@ export const ResidentForm: FC<ResidentFormProps> = ({
               value={formData.phone}
               onChange={handleChange}
               placeholder="Contoh: 08123456789"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm"
             />
           </div>
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <DoorOpen size={16} className="text-blue-500" /> Nomor Kamar
+              <DoorOpen size={16} className="text-emerald-600" /> Nomor Kamar
             </label>
             <input
               required
@@ -178,7 +190,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
               min={1}
               value={formData.room_number}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm"
             />
           </div>
 
@@ -186,7 +198,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
           {!initialData && (
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <CreditCard size={16} className="text-blue-500" /> Kode RFID
+                <CreditCard size={16} className="text-emerald-600" /> Kode RFID
               </label>
               <input
                 required
@@ -196,7 +208,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
                 value={formData.rfid_code}
                 onChange={handleChange}
                 placeholder="Contoh: A1B2C3D4"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm uppercase font-mono"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm uppercase font-mono"
               />
               <div className="flex items-center gap-2">
                 <button
@@ -204,27 +216,53 @@ export const ResidentForm: FC<ResidentFormProps> = ({
                   onClick={() => {
                     void handleReadRfid();
                   }}
-                  disabled={isWaitingRfid}
-                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={isWaitingRfid || latestRfidUid !== ""}
+                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isWaitingRfid ? (
                     <LoaderCircle size={14} className="animate-spin" />
+                  ) : latestRfidUid ? (
+                    <ShieldCheck size={14} />
                   ) : (
                     <Radio size={14} />
                   )}
-                  {isWaitingRfid ? "Menunggu Tap RFID..." : "Baca RFID"}
+                  {isWaitingRfid
+                    ? "Menunggu UID..."
+                    : latestRfidUid
+                      ? "UID Terambil"
+                      : "Ambil UID RFID"}
                 </button>
-                <span className="text-xs text-gray-500">
-                  Mode keypad: tekan D
-                </span>
+                {latestRfidUid && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatestRfidUid("");
+                      setFormData((prev) => ({
+                        ...prev,
+                        rfid_code: "",
+                      }));
+                      setRfidHint("");
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    <X size={14} />
+                    Batal
+                  </button>
+                )}
               </div>
               {rfidHint && <p className="text-xs text-gray-500">{rfidHint}</p>}
+              {latestRfidUid && (
+                <p className="text-[11px] font-mono text-emerald-700">
+                  UID terakhir: {latestRfidUid}
+                </p>
+              )}
             </div>
           )}
 
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <ShieldCheck size={16} className="text-blue-500" /> PIN Keamanan
+              <ShieldCheck size={16} className="text-emerald-600" /> PIN
+              Keamanan
             </label>
             <input
               required={!initialData}
@@ -237,7 +275,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
               placeholder={
                 initialData ? "Isi hanya jika ingin ganti" : "4-8 digit angka"
               }
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm"
             />
           </div>
         </div>
@@ -253,7 +291,7 @@ export const ResidentForm: FC<ResidentFormProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-blue-100"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-8 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-emerald-100"
           >
             <Save size={18} />
             {isLoading

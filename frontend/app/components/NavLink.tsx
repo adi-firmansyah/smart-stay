@@ -23,12 +23,20 @@ export const NavLink: FC<NavLinkProps> = ({
       to={path}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-[10px] py-[5px] rounded h-[35px] transition-colors",
-        isActive ? "bg-[#4b4bff]" : "hover:bg-white/20",
+        "flex h-[38px] items-center gap-3 rounded-2xl px-3 py-2 transition-all",
+        isActive
+          ? "border border-white/10 bg-white/10 text-white shadow-sm"
+          : "text-white/70 hover:bg-white/8 hover:text-white",
       )}
     >
-      <Icon size={25} className="text-white flex-shrink-0" />
-      <span className="font-semibold text-base text-white">{label}</span>
+      <Icon
+        size={22}
+        className={cn(
+          "flex-shrink-0 transition-colors",
+          isActive ? "text-cyan-200" : "text-white/55",
+        )}
+      />
+      <span className="text-base font-semibold">{label}</span>
     </Link>
   );
 };

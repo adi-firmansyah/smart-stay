@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 import os
 import time
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID
 
+import bcrypt
 import cv2
 import httpx
 import jwt
@@ -13,10 +15,29 @@ from deepface import DeepFace
 from fastapi import Depends, HTTPException, UploadFile, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import desc, select
+from logging import getLogger
 
-from src.config import settings
-from src.database import DBSession
-from src.models import AccessLog, AccessMethodEnum, Admin
+from config import settings
+from database import DBSession
+from models import AccessLog, AccessMethodEnum, Admin
+
+logger = getLogger(__name__)
+
+
+def hash_password(password: str) -> str:
+    """Hash plain-text password menggunakan bcrypt dan mengembalikan string ter-enkode."""
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    return hashed.decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifikasi password plain dengan hash bcrypt yang tersimpan."""
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False
 
 
 def validate_image_upload(file: UploadFile) -> None:
@@ -74,7 +95,18 @@ def save_image_to_disk(image_data: np.ndarray, directory: Path, filename: str) -
 
 def extract_embedding(image_data: np.ndarray) -> list[float]:
     """Ekstraksi vector embedding menggunakan DeepFace."""
+    logger.debug(
+        f"[DEEPFACE] Starting embedding extraction, image shape={image_data.shape}"
+    )
     try:
+        logger.debug(
+            "[DEEPFACE] Ensuring model is warmed up via get_deepface_model()..."
+        )
+        _ = get_deepface_model()
+
+        logger.debug(
+            f"[DEEPFACE] Calling DeepFace.represent() with model_name={settings.deepface_model}..."
+        )
         results: list[dict[str, Any]] = cast(
             list[dict[str, Any]],
             DeepFace.represent(
@@ -87,14 +119,67 @@ def extract_embedding(image_data: np.ndarray) -> list[float]:
         )
 
         if not results:
+            logger.warning(f"[DEEPFACE] ✗ No faces detected in image")
             raise ValueError("Tidak ada wajah yang terdeteksi.")
 
-        return cast(list[float], results[0]["embedding"])
+        embedding = cast(list[float], results[0]["embedding"])
+        logger.debug(
+            f"[DEEPFACE] ✓ Embedding extracted successfully, dim={len(embedding)}"
+        )
+        return embedding
+    except ValueError as val_err:
+        logger.warning(f"[DEEPFACE] ValueError: {val_err}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Gagal mengekstraksi wajah: {str(val_err)}",
+        )
     except Exception as e:
+        logger.error(
+            f"[DEEPFACE] ✗ Unexpected error: {type(e).__name__}: {e}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Gagal mengekstraksi wajah: {str(e)}",
         )
+
+
+@lru_cache(maxsize=1)
+def get_deepface_model() -> Any:
+    """Load model DeepFace sekali saja dan cache untuk request berikutnya."""
+    logger.info(f"[DEEPFACE] Building model '{settings.deepface_model}'...")
+    model = DeepFace.build_model(settings.deepface_model)
+    logger.info(f"[DEEPFACE] ✓ Model built and cached successfully")
+    return model
+
+
+def warmup_deepface_model() -> None:
+    """Preload model DeepFace saat startup agar request pertama lebih cepat."""
+    logger.info(f"[DEEPFACE_WARMUP] Starting DeepFace model warmup...")
+    try:
+        logger.info(f"[DEEPFACE_WARMUP] Calling get_deepface_model()...")
+        get_deepface_model()
+
+        logger.info(f"[DEEPFACE_WARMUP] Creating dummy image (50x50) for warmup...")
+        dummy_image = np.zeros((50, 50, 3), dtype=np.uint8)
+
+        logger.info(
+            f"[DEEPFACE_WARMUP] Calling DeepFace.represent() with dummy image..."
+        )
+        results = DeepFace.represent(
+            img_path=dummy_image,
+            model_name=settings.deepface_model,
+            enforce_detection=False,  # Don't enforce for dummy
+            detector_backend=settings.deepface_detector,
+            align=False,
+        )
+        logger.info(
+            f"[DEEPFACE_WARMUP] ✓ Warmup completed successfully, got {len(results)} result(s)"
+        )
+    except Exception as e:
+        logger.warning(
+            f"[DEEPFACE_WARMUP] Warning - Warmup failed (non-blocking): {type(e).__name__}: {e}"
+        )
+        # Jangan gagalkan startup jika model belum siap; request berikutnya tetap bisa mencoba lagi.
 
 
 async def handle_suspicious_activity(
@@ -130,7 +215,7 @@ async def handle_suspicious_activity(
 
 
 def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expire = now + timedelta(
         minutes=expires_minutes or settings.access_token_expire_minutes
     )

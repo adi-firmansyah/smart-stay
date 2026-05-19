@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy import select
 
-from src.utils import create_access_token, get_current_admin
-from src.database import DBSession
-from src.models import Admin
-from src.schemas import LoginRequest, LoginResponse, AdminResponse
+from utils import create_access_token, get_current_admin, verify_password
+from database import DBSession
+from models import Admin
+from schemas import LoginRequest, LoginResponse, AdminResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -14,7 +14,7 @@ async def admin_login(db: DBSession, payload: LoginRequest) -> LoginResponse:
     stmt = select(Admin).where(Admin.username == payload.username)
     admin = db.execute(stmt).scalar_one_or_none()
 
-    if not admin or admin.password != payload.password:
+    if not admin or not verify_password(payload.password, admin.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Username atau password salah.",

@@ -99,7 +99,7 @@ export const ResidentFeature: FC = () => {
               setSelectedResident(undefined); // Pastikan data bersih untuk data baru
               setViewMode("form"); // Ubah viewMode ke form
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm text-sm"
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
           >
             <PlusCircle size={18} />
             Tambah Data

@@ -9,13 +9,13 @@ export const LogTable: FC<{ logs: AccessLog[] }> = ({ logs }) => {
   const getMethodBadgeClass = (method: AccessMethod) => {
     switch (method) {
       case AccessMethod.FACE_RECOGNITION:
-        return "bg-purple-100 text-purple-600";
+        return "bg-indigo-50 text-indigo-700";
       case AccessMethod.RFID:
-        return "bg-blue-100 text-blue-600";
+        return "bg-emerald-50 text-emerald-700";
       case AccessMethod.PIN:
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-amber-50 text-amber-700";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-slate-100 text-slate-600";
     }
   };
 

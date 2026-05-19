@@ -138,9 +138,9 @@ const LandingPage: FC = () => {
             title="Tipe Paviliun Lengkap"
             description="Hunian luas dengan pembagian ruangan layaknya rumah mungil, cocok untuk kenyamanan ekstra."
             images={[
-              "/images/pavilliun-1.jpeg",
-              "/images/pavilliun-2.jpeg",
-              "/images/pavilliun-3.jpeg",
+              "/images/studio-1.jpeg",
+              "/images/studio-2.jpeg",
+              "/images/studio-3.jpeg",
             ]}
             price="Rp 850.000"
             units={6}
@@ -152,7 +152,7 @@ const LandingPage: FC = () => {
             onDetailClick={() => {
               setSelectedRoom({
                 title: "Tipe Paviliun Lengkap",
-                video: "/videos/pavilliun.mp4",
+                video: "/videos/studio.mp4",
               });
 
               setIsModalOpen(true);
@@ -164,9 +164,9 @@ const LandingPage: FC = () => {
             title="Tipe Studio Standard"
             description="Kamar minimalis fungsional dengan fasilitas esensial lengkap untuk efisiensi harian."
             images={[
-              "/images/studio-1.jpeg",
-              "/images/studio-2.jpeg",
-              "/images/studio-3.jpeg",
+              "/images/pavilliun-1.jpeg",
+              "/images/pavilliun-2.jpeg",
+              "/images/pavilliun-3.jpeg",
             ]}
             price="Rp 850.000"
             units={2}
@@ -178,7 +178,7 @@ const LandingPage: FC = () => {
             onDetailClick={() => {
               setSelectedRoom({
                 title: "Tipe Studio Standard",
-                video: "/videos/studio.mp4",
+                video: "/videos/pavilliun.mp4",
               });
 
               setIsModalOpen(true);

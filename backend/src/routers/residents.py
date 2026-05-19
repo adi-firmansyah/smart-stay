@@ -3,11 +3,12 @@ from typing import Sequence
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from fastapi.responses import PlainTextResponse
+from sqlalchemy import or_, select
 
-from src.database import DBSession
-from src.models import FaceEmbedding, Resident
-from src.schemas import CreateResidentRequest, ResidentResponse, UpdateResidentRequest
+from database import DBSession
+from models import FaceEmbedding, Resident
+from schemas import CreateResidentRequest, ResidentResponse, UpdateResidentRequest
 
 router: APIRouter = APIRouter(
     prefix="/residents",
@@ -35,25 +36,34 @@ async def get_residents(
 async def create_resident(
     db: DBSession, create_resident_request: CreateResidentRequest
 ) -> Resident:
-    stmt = select(Resident).where(
-        (Resident.rfid_code == create_resident_request.rfid_code)
-        | (Resident.pin == create_resident_request.pin)
-        | (Resident.room_number == create_resident_request.room_number)
-    )
-    existing: Resident | None = db.execute(stmt).scalar_one_or_none()
-
-    if existing:
-        if existing.rfid_code == create_resident_request.rfid_code:
-            detail = "Kode RFID sudah digunakan oleh penghuni lain."
-        elif existing.pin == create_resident_request.pin:
-            detail = "PIN sudah digunakan oleh penghuni lain."
-        else:
-            detail = "Nomor kamar sudah digunakan oleh penghuni lain."
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail,
+    # Single query to check all duplicate constraints
+    duplicate_check: Resident | None = db.execute(
+        select(Resident).where(
+            or_(
+                Resident.rfid_code == create_resident_request.rfid_code,
+                Resident.pin == create_resident_request.pin,
+                Resident.room_number == create_resident_request.room_number,
+            )
         )
+    ).scalar_one_or_none()
+
+    if duplicate_check:
+        # Determine which field caused the conflict
+        if duplicate_check.rfid_code == create_resident_request.rfid_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Kode RFID sudah digunakan oleh penghuni lain.",
+            )
+        elif duplicate_check.pin == create_resident_request.pin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="PIN sudah digunakan oleh penghuni lain.",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nomor kamar sudah digunakan oleh penghuni lain.",
+            )
 
     new_resident: Resident = Resident(**create_resident_request.model_dump())
     db.add(new_resident)
@@ -80,6 +90,23 @@ async def get_resident(db: DBSession, resident_id: UUID) -> Resident:
     return resident
 
 
+@router.get(
+    path="/device/cache",
+    description="Endpoint untuk mengekspor cache penghuni dalam format plain text yang mudah diparsing oleh ESP32.",
+    response_class=PlainTextResponse,
+)
+async def export_residents_device_cache(db: DBSession) -> str:
+    residents = (
+        db.execute(select(Resident).order_by(Resident.room_number)).scalars().all()
+    )
+
+    # Format: id|rfid_code|pin|room_number per baris
+    return "\n".join(
+        f"{resident.id}|{resident.rfid_code}|{resident.pin}|{resident.room_number}"
+        for resident in residents
+    )
+
+
 @router.patch(
     path="/{resident_id}",
     description="Endpoint untuk memperbarui detail penghuni berdasarkan ID.",
@@ -100,7 +127,48 @@ async def update_resident(
             detail="Penghuni tidak ditemukan.",
         )
 
-    for key, value in update_resident_request.model_dump(exclude_unset=True).items():
+    # Validate uniqueness constraints for fields being updated
+    data_to_update = update_resident_request.model_dump(exclude_unset=True)
+
+    # Check all unique constraints with single query if updating relevant fields
+    if any(field in data_to_update for field in ["rfid_code", "pin", "room_number"]):
+        constraints = []
+
+        if "rfid_code" in data_to_update:
+            constraints.append(Resident.rfid_code == data_to_update["rfid_code"])
+        if "pin" in data_to_update:
+            constraints.append(Resident.pin == data_to_update["pin"])
+        if "room_number" in data_to_update:
+            constraints.append(Resident.room_number == data_to_update["room_number"])
+
+        duplicate_check: Resident | None = db.execute(
+            select(Resident).where(or_(*constraints) & (Resident.id != resident_id))
+        ).scalar_one_or_none()
+
+        if duplicate_check:
+            # Determine which field caused the conflict
+            if (
+                "rfid_code" in data_to_update
+                and duplicate_check.rfid_code == data_to_update["rfid_code"]
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Kode RFID sudah digunakan oleh penghuni lain.",
+                )
+            elif (
+                "pin" in data_to_update and duplicate_check.pin == data_to_update["pin"]
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="PIN sudah digunakan oleh penghuni lain.",
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Nomor kamar sudah digunakan oleh penghuni lain.",
+                )
+
+    for key, value in data_to_update.items():
         setattr(resident, key, value)
 
     db.commit()

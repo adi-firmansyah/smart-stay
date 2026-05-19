@@ -1,7 +1,3 @@
-interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
-}
-
 export enum AccessMethod {
   FACE_RECOGNITION = "FACE_RECOGNITION",
   RFID = "RFID",

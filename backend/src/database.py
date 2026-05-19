@@ -5,8 +5,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.config import settings
-from src.models import Base
+from config import settings
+from models import Base
 
 engine: Engine = create_engine(
     url=settings.database_url,

@@ -4,15 +4,15 @@ from uuid import UUID
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
-from src.config import settings
-from src.database import DBSession
-from src.models import FaceEmbedding, Resident
-from src.schemas import (
+from config import settings
+from database import DBSession
+from models import FaceEmbedding, Resident
+from schemas import (
     BulkFaceEmbeddingResponse,
     FaceEmbeddingResponse,
     FaceEmbeddingResult,
 )
-from src.utils import extract_embedding, read_upload_file_to_numpy, save_image_to_disk
+from utils import extract_embedding, read_upload_file_to_numpy, save_image_to_disk
 
 router: APIRouter = APIRouter(
     prefix="/residents/{resident_id}/face-embeddings",
@@ -48,6 +48,15 @@ async def get_face_embeddings(db: DBSession, resident_id: UUID) -> list[FaceEmbe
 async def create_face_embedding(
     db: DBSession, resident_id: UUID, files: list[UploadFile] = File(...)
 ) -> BulkFaceEmbeddingResponse:
+    resident: Resident | None = db.execute(
+        select(Resident).where(Resident.id == resident_id)
+    ).scalar_one_or_none()
+    if not resident:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Penghuni dengan ID {resident_id} tidak ditemukan.",
+        )
+
     results: list[FaceEmbeddingResult] = []
     success_count: int = 0
     failed_count: int = 0
@@ -56,6 +65,10 @@ async def create_face_embedding(
     for file in files:
         saved_path: str = ""
         filename: str = file.filename or "unknown"
+
+        # Create savepoint for each file to isolate rollback
+        savepoint = db.begin_nested()
+
         try:
             image_data = read_upload_file_to_numpy(file)
             saved_path = save_image_to_disk(
@@ -67,7 +80,7 @@ async def create_face_embedding(
                 resident_id=resident_id, image_path=saved_path, embedding=embedding
             )
             db.add(new_entry)
-            db.commit()
+            savepoint.commit()
 
             success_count += 1
             results.append(
@@ -77,14 +90,20 @@ async def create_face_embedding(
             )
         except Exception as e:
             failed_count += 1
-            db.rollback()
+            savepoint.rollback()
             if saved_path and Path(saved_path).exists():
-                Path(saved_path).unlink()
+                try:
+                    Path(saved_path).unlink()
+                except Exception:
+                    pass
 
             error_msg: str = str(e.detail) if isinstance(e, HTTPException) else str(e)
             results.append(
                 FaceEmbeddingResult(filename=filename, status="gagal", error=error_msg)
             )
+
+    # Commit main transaction after all files processed
+    db.commit()
 
     return BulkFaceEmbeddingResponse(
         total_processed=len(files),

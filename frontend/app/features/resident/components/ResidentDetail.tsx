@@ -151,7 +151,7 @@ export const ResidentDetail: FC<ResidentDetailProps> = ({
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600">
+              <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
                 <Fingerprint size={24} />
               </div>
               <div>
@@ -179,7 +179,7 @@ export const ResidentDetail: FC<ResidentDetailProps> = ({
               <button
                 disabled={isUploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-blue-100"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-emerald-100"
               >
                 {isUploading ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -193,7 +193,7 @@ export const ResidentDetail: FC<ResidentDetailProps> = ({
 
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-24 space-y-4 text-slate-400">
-              <Loader2 className="animate-spin text-blue-500" size={48} />
+              <Loader2 className="animate-spin text-emerald-600" size={48} />
               <p className="text-sm font-medium italic">
                 Sinkronisasi data wajah...
               </p>
@@ -205,7 +205,7 @@ export const ResidentDetail: FC<ResidentDetailProps> = ({
                   key={emb.id || idx}
                   className="group flex flex-col items-center gap-3"
                 >
-                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm transition-all hover:ring-4 hover:ring-blue-500/10">
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm transition-all hover:ring-4 hover:ring-emerald-500/10">
                     <img
                       // Penggunaan refreshKey untuk menghindari cache browser pada gambar lama
                       src={`${BASE_API_URL}/${emb.image_path}?t=${refreshKey}`}
@@ -247,7 +247,7 @@ const InfoItem: FC<{ label: string; value: string; icon: React.ReactNode }> = ({
 }) => (
   <div className="space-y-1.5">
     <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-      <span className="text-blue-500">{icon}</span> {label}
+      <span className="text-emerald-600">{icon}</span> {label}
     </label>
     <p className="text-lg font-bold text-slate-800">{value}</p>
   </div>
@@ -263,7 +263,7 @@ const EmptyState: FC<{ onClick: () => void }> = ({ onClick }) => (
     </h4>
     <button
       onClick={onClick}
-      className="mt-4 text-blue-600 font-bold hover:underline"
+      className="mt-4 font-bold text-emerald-700 hover:underline"
     >
       Mulai Unggah Sekarang
     </button>

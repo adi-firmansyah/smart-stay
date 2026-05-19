@@ -5,6 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from config import settings
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
@@ -15,18 +16,18 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
     Uuid,
     func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
-from src.config import settings
 
 
 class AccessMethodEnum(str, enum.Enum):
     FACE_RECOGNITION = "FACE_RECOGNITION"
     RFID = "RFID"
     PIN = "PIN"
+    EXIT_BUTTON = "EXIT_BUTTON"
 
 
 class Base(DeclarativeBase):
@@ -103,6 +104,13 @@ class FaceEmbedding(Base):
 
 class AccessLog(Base):
     __tablename__ = "access_logs"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_device_id",
+            "source_log_id",
+            name="uq_access_logs_source_device_log",
+        ),
+    )
 
     resident_id: Mapped[UUID | None] = mapped_column(
         Uuid,
@@ -118,6 +126,12 @@ class AccessLog(Base):
     granted: Mapped[bool] = mapped_column(Boolean, nullable=False, index=True)
     similarity: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     image_path: Mapped[str] = mapped_column(Text, nullable=True)
+    source_device_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    source_log_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, index=True
+    )
 
     # Relationships
     resident: Mapped[Resident | None] = relationship(back_populates="access_logs")

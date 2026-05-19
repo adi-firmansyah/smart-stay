@@ -34,6 +34,20 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### Real-time updates
+
+Dashboard dan log aktivitas akan otomatis revalidate saat backend mengirim event
+`access_log.created` melalui WebSocket.
+
+Secara default URL WebSocket diturunkan dari `VITE_API_URL`. Jika perlu diatur
+manual, tambahkan:
+
+```bash
+VITE_WS_URL=ws://localhost:8000/ws/events
+```
+
+Jika backend berjalan di HTTPS, gunakan `wss://`.
+
 ## Building for Production
 
 Create a production build:

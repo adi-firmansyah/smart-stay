@@ -24,7 +24,7 @@ export const ResidentFilter: FC<ResidentFilterProps> = ({
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setSearchQuery(e.target.value)
           }
-          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm text-gray-700"
+          className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-4 text-sm text-gray-700 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         />
       </div>
     </div>

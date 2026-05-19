@@ -27,21 +27,21 @@ export const Sidebar: FC<SidebarProps> = ({
   return (
     <aside
       className={cn(
-        "fixed lg:static inset-y-0 left-0 z-30 w-60 bg-[#000080] flex flex-col h-full transition-transform duration-300",
+        "fixed inset-y-0 left-0 z-30 flex h-full w-60 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#06121f_0%,#0b1b2d_55%,#08131f_100%)] text-white shadow-2xl shadow-slate-900/20 backdrop-blur-xl transition-transform duration-300 lg:static",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
       <div className="px-6 pt-6 pb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-white text-xl font-bold leading-7">
+          <h1 className="text-xl font-bold leading-7 text-white">
             Bumi Rafka Kost
           </h1>
-          <p className="text-white/70 text-sm mt-1">
+          <p className="mt-1 text-sm text-cyan-200/80">
             Smart Gate Access Control
           </p>
         </div>
         <button
-          className="lg:hidden text-white/70 hover:text-white"
+          className="text-white/60 transition-colors hover:text-white lg:hidden"
           onClick={onClose}
         >
           <X size={20} />
@@ -61,11 +61,11 @@ export const Sidebar: FC<SidebarProps> = ({
 
       <div className="px-5 pb-6">
         <button
-          className="w-full flex items-center justify-center gap-3 px-6 py-2 border border-[#F8F1F1] rounded-[5px] h-[41px] hover:bg-white/10 transition-colors"
+          className="flex h-[41px] w-full items-center justify-center gap-3 rounded-[14px] border border-white/10 px-6 py-2 text-white/90 transition-colors hover:bg-white/10"
           onClick={onLogout}
         >
-          <LogOut size={25} className="text-white" />
-          <span className="font-semibold text-[15px] text-white">Keluar</span>
+          <LogOut size={22} className="text-cyan-200" />
+          <span className="text-[15px] font-semibold text-white">Keluar</span>
         </button>
       </div>
     </aside>
